@@ -1,0 +1,12 @@
+services:
+  krakend:
+    image: devopsfaith/krakend:latest
+    container_name: krakend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./krakend.json:/etc/krakend/krakend.json
+
+networks:
+  krakend-networks:
+    external: true
