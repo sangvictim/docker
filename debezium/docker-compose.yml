@@ -1,0 +1,86 @@
+services:
+  debezium-database:
+    image: postgres:16.3
+    container_name: debezium-database
+    hostname: debezium-database
+    command: [ 'postgres', '-c', 'wal_level=logical' ]
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=debezium
+      - POSTGRES_PASSWORD=123456
+    volumes:
+      - ./database/:/var/lib/postgresql/data
+    networks:
+      - debe-net
+
+  zookeeper:
+    image: bitnami/zookeeper:3.9.2
+    container_name: zookereper
+    hostname: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - debe-net
+
+  debezium:
+    image: debezium/connect:3.0
+    container_name: debezium
+    hostname: debezium
+    ports:
+      - 8083:8083
+    depends_on:
+      - debezium-database
+      - zookeeper
+      - kafka
+    environment:
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my-connect-configs
+      - OFFSET_STORAGE_TOPIC=my-connect-offsets
+      - BOOTSTRAP_SERVERS=kafka:9092
+    links:
+      - zookeeper:zookeeper
+      - kafka:kafka
+    networks:
+      - debe-net
+
+  kafka:
+    image: bitnami/kafka:3.4.1
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - '9093:9093'
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    networks:
+      - debe-net
+  # debezium-ui:
+  #   image: debezium/debezium-ui:latest
+  #   container_name: debezium-ui
+  #   ports:
+  #     - 8080:8080
+  #   depends_on:
+  #     - debezium-database
+  #     - debezium
+  #   environment:
+  #     KAFKA_CONNECT_URIS: http://debezium:8083
+  #   networks:
+  #     - debe-net
+
+
+networks:
+  debe-net:
+    driver: bridge
