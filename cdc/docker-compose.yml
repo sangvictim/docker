@@ -15,22 +15,22 @@ services:
     networks:
       - debe-net
 
-  zookeeper:
-    image: bitnami/zookeeper:3.9.2
-    container_name: zookereper
-    hostname: zookeeper
-    ports:
-      - 2181:2181
-    environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOO_4LW_COMMANDS_WHITELIST: "*"
-      # ZOO_ENABLE_AUTH: "yes"
-      # ZOO_CLIENT_USER: "admin"
-      # ZOO_CLIENT_PASSWORD: "admin"
-    networks:
-      - debe-net
+  # zookeeper:
+  #   image: bitnami/zookeeper:3.9.2
+  #   container_name: zookereper
+  #   hostname: zookeeper
+  #   ports:
+  #     - 2181:2181
+  #   environment:
+  #     ALLOW_ANONYMOUS_LOGIN: "yes"
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
+  #     ZOO_4LW_COMMANDS_WHITELIST: "*"
+  #     ZOO_ENABLE_AUTH: "yes"
+  #     ZOO_CLIENT_USER: "admin"
+  #     ZOO_CLIENT_PASSWORD: "admin"
+  #   networks:
+  #     - debe-net
 
   debezium:
     image: debezium/connect:3.0
@@ -40,7 +40,6 @@ services:
       - 8083:8083
     depends_on:
       - debezium-database
-      - zookeeper
       - kafka
     environment:
       - GROUP_ID=1
@@ -48,29 +47,40 @@ services:
       - OFFSET_STORAGE_TOPIC=my-connect-offsets
       - BOOTSTRAP_SERVERS=kafka:9092
     links:
-      - zookeeper:zookeeper
       - kafka:kafka
     networks:
       - debe-net
 
   kafka:
-    image: bitnami/kafka:3.4.1
+    image: bitnami/kafka:3.7.1
     container_name: kafka
     hostname: kafka
     ports:
-      - '9093:9093'
+      - '9092:9092'
+    volumes:
+      - ./kafka:/bitnami/kafka
     environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
-    depends_on:
-      - zookeeper
+      - TZ=Asia/Jakarta
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:19092,PLAINTEXT_HOST://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:19092,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     networks:
       - debe-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    ports:
+      - 8080:8080
+    environment:
+      TZ: Asia/Jakarta
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
   # debezium-ui:
   #   image: debezium/debezium-ui:latest
   #   container_name: debezium-ui
@@ -87,14 +97,10 @@ services:
     image: solr:9.6.1
     container_name: solr
     hostname: solr
-    depends_on:
-      - zookeeper
     ports:
       - 8983:8983
     volumes:
       - ./solrdata:/var/solr
-    environment:
-      ZK_HOST: "zookeeper:2181"
     user: root
     command: bash -c " chown -R 8983:8983 /var/solr && runuser -u solr -- solr-precreate default-core"
     networks:
