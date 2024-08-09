@@ -57,8 +57,6 @@ services:
     hostname: kafka
     ports:
       - '9092:9092'
-    volumes:
-      - ./kafka:/bitnami/kafka
     environment:
       - TZ=Asia/Jakarta
       - KAFKA_CFG_NODE_ID=0
@@ -81,6 +79,8 @@ services:
       TZ: Asia/Jakarta
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+    networks:
+      - debe-net
   # debezium-ui:
   #   image: debezium/debezium-ui:latest
   #   container_name: debezium-ui
