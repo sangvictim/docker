@@ -1,2 +1,5 @@
 database
 solrdata
+kafka
+elasticsearch
+debezium
