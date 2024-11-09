@@ -1,6 +1,6 @@
 services:
   rabbitmq:
-    image: rabbitmq:3.13.4-management
+    image: rabbitmq:4.0.3-management
     container_name: rabbitmq
     ports:
       - "5672:5672"
@@ -9,8 +9,11 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
     volumes:
-      - ./rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
 
+volumes:
+  rabbitmq_data:
+  
 networks:
   krakend-networks:
     external: true
