@@ -1,0 +1,95 @@
+services:
+    postgres:
+        container_name: postgres
+        image: bitnami/postgresql:latest
+        command: [ 'postgres', '-c', 'wal_level=logical' ]
+        ports:
+            - 5432:5432
+        environment:
+            POSTGRESQL_PASSWORD: 123456
+        volumes:
+            - postgresql_data:/bitnami/postgresql
+            - postgres_initdb:/docker-entrypoint-initdb.d
+            - postgres_preinitdb:/docker-entrypoint-preinitdb.d
+        networks:
+            - db-net
+
+    mysql:
+        container_name: mysql
+        image: bitnami/mysql:latest
+        ports:
+            - 3306:3306
+        environment:
+            MYSQL_ROOT_USER: "root"
+            MYSQL_ROOT_PASSWORD: 123456
+        volumes:
+            - mysql_data:/bitnami/mysql/data
+        networks:
+            - db-net
+
+    mongodb:
+        container_name: mongodb
+        image: bitnami/mongodb:8.0.3
+        environment:
+            MONGODB_PASSWORD: 123456
+            MONGODB_ROOT_USER: root
+        ports:
+            - 8081:8081
+        volumes:
+            - mongodb_data:/bitnami/mongodb
+        networks:
+            - db-net
+
+    cockroachdb:
+        container_name: cockroachdb
+        image: cockroachdb/cockroach:v23.2.14
+        command: start-single-node --insecure 
+        environment:
+            COCKROACH_USER: root
+            COCKROACH_PASSWORD: 123456
+        ports:
+            - "26257:26257"  # Expose SQL port
+            - "8080:8080"    # Expose Admin UI port
+        volumes:
+            - cockroachdb_data:/cockroach/cockroach-data
+        networks:
+            - db-net
+
+    cassandra:
+        container_name: cassandra
+        image: bitnami/cassandra:latest
+        ports:
+            - "9042:9042"  # Expose CQL client port
+        environment:
+            CASSANDRA_SEEDS: cassandra
+            CASSANDRA_USER: cassandra
+            CASSANDRA_PASSWORD: 123456
+        volumes:
+            - cassandra_data:/bitnami
+        networks:
+            - db-net
+
+    redis:
+        container_name: redis
+        image: bitnami/redis:latest
+        ports:
+            - "6379:6379"
+        environment:
+            ALLOW_EMPTY_PASSWORD: "yes"
+        volumes:
+            - redis_data:/bitnami/redis/data
+        networks:
+            - db-net
+
+volumes:
+    postgresql_data:
+    postgres_initdb:
+    postgres_preinitdb:
+    mysql_data:
+    mongodb_data:
+    cockroachdb_data:
+    cassandra_data:
+    redis_data:
+networks:
+  db-net:
+    driver: bridge
