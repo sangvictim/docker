@@ -2,15 +2,16 @@ services:
     postgres:
         container_name: postgres
         image: bitnami/postgresql:latest
-        command: [ 'postgres', '-c', 'wal_level=logical' ]
         ports:
             - 5432:5432
         environment:
+            POSTGRESQL_WAL_LEVEL: archive
             POSTGRESQL_PASSWORD: 123456
+            POSTGRESQL_TIMEZONE: utc
         volumes:
-            - postgresql_data:/bitnami/postgresql
-            - postgres_initdb:/docker-entrypoint-initdb.d
-            - postgres_preinitdb:/docker-entrypoint-preinitdb.d
+            - ./postgresql_data:/bitnami/postgresql
+            - ./postgres_initdb:/docker-entrypoint-initdb.d
+            - ./postgres_preinitdb:/docker-entrypoint-preinitdb.d
         networks:
             - db-net
 
@@ -82,9 +83,9 @@ services:
             - db-net
 
 volumes:
-    postgresql_data:
-    postgres_initdb:
-    postgres_preinitdb:
+    # postgresql_data:
+    # postgres_initdb:
+    # postgres_preinitdb:
     mysql_data:
     mongodb_data:
     cockroachdb_data:
